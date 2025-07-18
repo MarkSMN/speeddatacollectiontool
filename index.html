@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mobile-friendly traffic speed data collection tool for community traffic studies">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <title>Speed Data Collection Tool</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .speed-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .speed-btn {
+            padding: 18px 12px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .speed-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .speed-btn:active {
+            transform: scale(0.98);
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .control-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .undo-btn {
+            background: #ff9800;
+            color: white;
+        }
+        .undo-btn:hover {
+            background: #f57c00;
+        }
+        .clear-btn {
+            background: #f44336;
+            color: white;
+        }
+        .clear-btn:hover {
+            background: #d32f2f;
+        }
+        .export-btn {
+            background: #2196F3;
+            color: white;
+        }
+        .export-btn:hover {
+            background: #1976D2;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976D2;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .data-display {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .data-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .data-value {
+            background: #e8f5e8;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .recent-entry {
+            background: #ffeb3b;
+            animation: highlight 1s ease-out;
+        }
+        @keyframes highlight {
+            from { background: #4CAF50; }
+            to { background: #ffeb3b; }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Speed Data Collection Tool</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="count">0</div>
+                <div class="stat-label">Total Entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="timer">00:00</div>
+                <div class="stat-label">Elapsed Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="average">--</div>
+                <div class="stat-label">Average Speed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="min">--</div>
+                <div class="stat-label">Min Speed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="max">--</div>
+                <div class="stat-label">Max Speed</div>
+            </div>
+        </div>
+
+        <div class="speed-grid">
+            <!-- Speed buttons will be generated here -->
+        </div>
+
+        <div class="controls">
+            <button class="control-btn undo-btn" onclick="undoLast()">↶ Undo Last</button>
+            <button class="control-btn clear-btn" onclick="clearAll()">🗑️ Clear All</button>
+            <button class="control-btn export-btn" onclick="exportData()">📋 Copy Data</button>
+        </div>
+
+        <div class="data-display" id="dataDisplay">
+            <div style="text-align: center; color: #666; font-style: italic;">
+                Click speed buttons above to start entering data...
+            </div>
+        </div>
+        
+        <div class="footer">
+            Speed Data Collection Tool v1.0 | 
+            <a href="https://github.com/yourusername/speed-data-tool" target="_blank">GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        let speedData = [];
+        let startTime = null;
+        let timerInterval = null;
+        
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(registrationError => console.log('SW registration failed'));
+            });
+        }
+        
+        // Generate speed buttons from 25 to 54
+        function generateSpeedButtons() {
+            const grid = document.querySelector('.speed-grid');
+            for (let speed = 25; speed <= 54; speed++) {
+                const btn = document.createElement('button');
+                btn.className = 'speed-btn';
+                btn.textContent = speed;
+                btn.onclick = () => addSpeed(speed);
+                
+                // Set gradient color based on speed
+                const color = getSpeedColor(speed);
+                btn.style.background = color;
+                
+                grid.appendChild(btn);
+            }
+        }
+
+        function getSpeedColor(speed) {
+            if (speed >= 25 && speed <= 30) {
+                // Green (25-30)
+                return '#4CAF50';
+            } else if (speed >= 31 && speed <= 35) {
+                // Green to Yellow gradient
+                const ratio = (speed - 31) / 4;
+                return interpolateColor('#4CAF50', '#FFEB3B', ratio);
+            } else if (speed >= 36 && speed <= 40) {
+                // Yellow to Orange gradient
+                const ratio = (speed - 36) / 4;
+                return interpolateColor('#FFEB3B', '#FF9800', ratio);
+            } else if (speed >= 41 && speed <= 45) {
+                // Orange to Red gradient
+                const ratio = (speed - 41) / 4;
+                return interpolateColor('#FF9800', '#F44336', ratio);
+            } else if (speed >= 46 && speed <= 54) {
+                // Red to Dark Merlot gradient
+                const ratio = (speed - 46) / 8;
+                return interpolateColor('#F44336', '#722F37', ratio);
+            }
+            return '#4CAF50'; // fallback
+        }
+
+        function interpolateColor(color1, color2, ratio) {
+            const hex1 = color1.replace('#', '');
+            const hex2 = color2.replace('#', '');
+            
+            const r1 = parseInt(hex1.substring(0, 2), 16);
+            const g1 = parseInt(hex1.substring(2, 4), 16);
+            const b1 = parseInt(hex1.substring(4, 6), 16);
+            
+            const r2 = parseInt(hex2.substring(0, 2), 16);
+            const g2 = parseInt(hex2.substring(2, 4), 16);
+            const b2 = parseInt(hex2.substring(4, 6), 16);
+            
+            const r = Math.round(r1 + (r2 - r1) * ratio);
+            const g = Math.round(g1 + (g2 - g1) * ratio);
+            const b = Math.round(b1 + (b2 - b1) * ratio);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function addSpeed(speed) {
+            // Start timer on first entry
+            if (speedData.length === 0) {
+                startTimer();
+            }
+            
+            speedData.push(speed);
+            updateDisplay();
+            updateStats();
+        }
+
+        function startTimer() {
+            startTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            startTime = null;
+            document.getElementById('timer').textContent = '00:00';
+        }
+
+        function undoLast() {
+            if (speedData.length > 0) {
+                speedData.pop();
+                updateDisplay();
+                updateStats();
+            }
+        }
+
+        function clearAll() {
+            speedData = [];
+            resetTimer();
+            updateDisplay();
+            updateStats();
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('dataDisplay');
+            if (speedData.length === 0) {
+                display.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">Click speed buttons above to start entering data...</div>';
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < speedData.length; i += 10) {
+                html += '<div class="data-row">';
+                for (let j = i; j < Math.min(i + 10, speedData.length); j++) {
+                    const isRecent = j === speedData.length - 1;
+                    html += `<span class="data-value ${isRecent ? 'recent-entry' : ''}">${speedData[j]}</span>`;
+                }
+                html += '</div>';
+            }
+            display.innerHTML = html;
+            
+            // Scroll to bottom
+            display.scrollTop = display.scrollHeight;
+        }
+
+        function updateStats() {
+            const count = speedData.length;
+            document.getElementById('count').textContent = count;
+
+            if (count === 0) {
+                document.getElementById('average').textContent = '--';
+                document.getElementById('min').textContent = '--';
+                document.getElementById('max').textContent = '--';
+                return;
+            }
+
+            const sum = speedData.reduce((a, b) => a + b, 0);
+            const average = (sum / count).toFixed(1);
+            const min = Math.min(...speedData);
+            const max = Math.max(...speedData);
+
+            document.getElementById('average').textContent = average;
+            document.getElementById('min').textContent = min;
+            document.getElementById('max').textContent = max;
+        }
+
+        function exportData() {
+            if (speedData.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const dataText = speedData.join(', ');
+            const elapsed = startTime ? Math.floor((new Date() - startTime) / 1000) : 0;
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const average = (speedData.reduce((a, b) => a + b, 0) / speedData.length).toFixed(1);
+            const min = Math.min(...speedData);
+            const max = Math.max(...speedData);
+            
+            const fullText = `Speed Data Collection
+Start Time: ${startTime ? startTime.toLocaleString() : 'N/A'}
+Duration: ${timeStr}
+Total Entries: ${speedData.length}
+
+Raw Data:
+${dataText}
+
+Statistics:
+Average: ${average} mph
+Min: ${min} mph
+Max: ${max} mph
+
+Data Entry Rate: ${elapsed > 0 ? (speedData.length / (elapsed / 60)).toFixed(1) : 0} entries/minute`;
+            
+            navigator.clipboard.writeText(fullText).then(() => {
+                alert('Data copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = fullText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('Data copied to clipboard!');
+            });
+        }
+
+        // Initialize the app
+        generateSpeedButtons();
+    </script>
+</body>
+</html>
