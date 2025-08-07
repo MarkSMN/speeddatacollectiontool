@@ -53,8 +53,8 @@
         .speed-btn {
             padding: 0;
             width: 100%;
-            height: 60px;
-            font-size: 20px;
+            height: 50px;
+            font-size: 18px;
             font-weight: bold;
             color: white;
             border: none;
@@ -214,7 +214,7 @@
         </div>
         
         <div class="footer">
-            Speed Data Collection v1.0 | Mark Schoening
+            Speed Data Collection v1.1 | Mark Schoening
         </div>
     </div>
 
@@ -232,10 +232,10 @@
             });
         }
         
-        // Generate speed buttons from 25 to 54
+        // Generate speed buttons from 15 to 54
         function generateSpeedButtons() {
             const grid = document.querySelector('.speed-grid');
-            for (let speed = 25; speed <= 54; speed++) {
+            for (let speed = 15; speed <= 54; speed++) {
                 const btn = document.createElement('button');
                 btn.className = 'speed-btn';
                 btn.textContent = speed;
@@ -250,8 +250,15 @@
         }
 
         function getSpeedColor(speed) {
-            if (speed >= 25 && speed <= 30) {
-                // Green (25-30)
+            if (speed >= 15 && speed <= 20) {
+                // Very light green for very low speeds (15-20)
+                return '#8BC34A';
+            } else if (speed >= 21 && speed <= 25) {
+                // Light to medium green (21-25)
+                const ratio = (speed - 21) / 4;
+                return interpolateColor('#8BC34A', '#4CAF50', ratio);
+            } else if (speed >= 26 && speed <= 30) {
+                // Medium green (26-30)
                 return '#4CAF50';
             } else if (speed >= 31 && speed <= 35) {
                 // Green to Yellow gradient
